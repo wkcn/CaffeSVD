@@ -1,10 +1,9 @@
 import os
 import numpy as np
 
-def GetSVDProto(r):
-    filename = "./proto/SVD/cifar10_SVD%d.prototxt" % r
+def GetSVDProtoI(r, filename, template):
     if not os.path.exists(filename):
-        fin = open("./proto/cifar10_SVD.template", "r")
+        fin = open(template, "r")
         fout = open(filename, "w")
         for line in fin.readlines():
             fout.write(line.replace("$", str(r)))
@@ -12,6 +11,15 @@ def GetSVDProto(r):
         fout.close()
 
     return filename
+
+def GetSVDProto(r):
+    filename = "./proto/SVD/cifar10_SVD%d.prototxt" % r
+    template = "./proto/cifar10_SVD.template"
+    return GetSVDProtoI(r, filename, template)
+def GetIP1SVDProto(r):
+    filename = "./proto/SVD/cifar10_ip1_SVD%d.prototxt" % r
+    template = "./proto/cifar10_ip1_SVD.template"
+    return GetSVDProtoI(r, filename, template)
 
 def get_comfusion_matrix(label, pre, k):
     # TP, FN

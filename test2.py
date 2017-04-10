@@ -1,5 +1,5 @@
 #coding=utf-8
-# decompress ip2 layer
+# decompress ip1 layer
 import caffe
 from caffe import layers as L, params as P, to_proto
 from caffe.proto import caffe_pb2
@@ -14,8 +14,8 @@ from base import *
 CAFFE_HOME = "/opt/caffe/"
 RESULT_DIR = "./result/"
 
-SVD_R = 8
-deploySVD = GetSVDProto(SVD_R)
+SVD_R = 62
+deploySVD = GetIP1SVDProto(SVD_R)
 
 deploy = "./proto/cifar10_quick.prototxt"
 caffe_model = CAFFE_HOME + "/examples/cifar10/cifar10_quick_iter_5000.caffemodel.h5" 
@@ -76,7 +76,7 @@ data, label = L.Data(source = test_db, backend = P.Data.LMDB, batch_size = 100, 
 if SVD_R > 0:
     # SVD
     print ("SVD %d" % SVD_R)
-    u, sigma, vt = la.svd(net.params["ip2"][0].data)
+    u, sigma, vt = la.svd(net.params["ip1"][0].data)
     print ("Sigma: ", sigma)
     if SVD_R > len(sigma):
         print ("SVD_R is too large :-(")
@@ -84,7 +84,7 @@ if SVD_R > 0:
     U = np.matrix(u[:, :SVD_R])
     S = np.matrix(np.diag(sigma[:SVD_R]))
     VT = np.matrix(vt[:SVD_R, :])
-    print ("IP2", net.params["ip2"][0].data.shape) # 10, 64
+    print ("IP2", net.params["ip1"][0].data.shape) # 10, 64
     print ("U", U.shape)
     print ("S", S.shape)
     print ("VT", VT.shape)
@@ -97,7 +97,7 @@ if SVD_R > 0:
 
     np.copyto(netSVD.params["ipZ"][0].data, Z)
     np.copyto(netSVD.params["ipU"][0].data, U)
-    np.copyto(netSVD.params["ipU"][1].data, net.params["ip2"][1].data)
+    np.copyto(netSVD.params["ipU"][1].data, net.params["ip1"][1].data)
 
     nn = netSVD
 else:
@@ -119,6 +119,6 @@ print ("Accuracy: %f" % (right * 1.0 / n))
 
 
 if SVD_R > 0:
-    np.save(RESULT_DIR + "net_SVD%d.npy" % SVD_R, pre)
+    np.save(RESULT_DIR + "net_ip1_SVD%d.npy" % SVD_R, pre)
 else:
-    np.save(RESULT_DIR + "net_normal.npy", pre)
+    np.save(RESULT_DIR + "net_ip1_normal.npy", pre)
