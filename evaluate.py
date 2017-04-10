@@ -14,10 +14,4 @@ pre   = np.load(PREDICT_FILENAME)
 label = np.load("label.npy")
 n = len(label)
 
-for k in range(num_kinds):
-    print ("Kind: %d" % k)
-    eval_result(label, pre, k)
-    print ("========")
-
-acc = np.sum(pre == label) * 1.0 / n
-print ("Total Accuracy: %f", acc)
+eval_result(label, pre, num_kinds)
