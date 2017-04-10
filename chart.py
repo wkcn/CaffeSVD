@@ -12,22 +12,24 @@ mrecalls = []
 mfs = []
 
 # A(nxw) * B(wxm), time:O(nwm)  space:O(nw+wm)
-# IP2(10 x 64) * x(64x1)     time:O(640) space:O(640) # exclude x
-# U(10xr) * S(rxr) * VT(rx64) * x(64x1):
-# time:O(r * 64 + r * r + 10 * r) = O(74 * r + r^2)
-# space: O(10r + r^2 + 64r) = O(74r + r^2)
+# IP2(10 x 64) * x(64x1)
+# Time:O(640) Space:O(640) # exclude x
+# W = U(10xr) * S(rxr) * VT(rx64)
+# U(10xr) * Z(rx64) * x(64 x 1)
+# Time: O(r*64 + 10 * r) = O(74r)
+# Space: O(10r + 64r) = O(74r) 
 
 
 t = [i for i in range(3, 11)]
-time_complex = [74 * r + r*r for r in t] 
+time_complex = [74 * r for r in t] 
 print ("Time Complexity:")
 print (time_complex)
-space_complex = [74 * r + r*r for r in t] 
+space_complex = [74 * r for r in t] 
 # 0 - 1
-time_complex = np.array(time_complex) * 1.0 / max(time_complex)
-space_complex = np.array(space_complex) * 1.0 / max(space_complex)
+time_complex_n = np.array(time_complex) * 1.0 / max(time_complex)
+space_complex_n = np.array(space_complex) * 1.0 / max(space_complex)
 for r in t:
-    name = "net_SVD%d.npy" % r
+    name = "result/net_SVD%d.npy" % r
     pre  = np.load(name)
     acc, mean_acc, mean_precision, mean_recall, mean_F = eval_result(label, pre, num_kinds)
     accs.append(acc)
@@ -36,27 +38,23 @@ for r in t:
     mrecalls.append(mean_recall)
     mfs.append(mean_F)
 
+print ("k\taccuracy\tmean_precision\tmean_recall\tmean_F\ttime complexity\tspace complexity")
+for i in range(len(t)-1,-1,-1):
+    print ("%d\t%f\t%f\t%f\t%f\t%d\t%d" % (t[i], accs[i], mpres[i], mrecalls[i],mfs[i], time_complex[i], space_complex[i]))
+
 plt.title("accuracy(totally), time and space complexity")
 plt.plot(t, accs, "g", label = "accuracy")
-plt.plot(t, time_complex, "r", label = "time complexity")
-plt.plot(t, space_complex, "k", label = "space complexity")
-plt.legend(loc="upper left")
+plt.plot(t, time_complex_n, "r", label = "time complexity")
+plt.plot(t, space_complex_n, "k", label = "space complexity")
+plt.legend(loc = "upper left")
 plt.show()
 
-plt.subplot(2,2,1)
-plt.title("mean_accuracy")
-plt.plot(t, maccs)
-
-plt.subplot(2,2,2)
-plt.title("mean_precision")
-plt.plot(t, mpres)
-
-plt.subplot(2,2,3)
-plt.title("mean_recall")
-plt.plot(t, mrecalls)
-
-plt.subplot(2,2,4)
-plt.title("mean_F")
-plt.plot(t, mfs)
+plt.title("statistics")
+plt.plot(t, accs, "r", label = "accuracy")
+#plt.plot(t, maccs, "r", label = "mean_accuracy")
+plt.plot(t, mpres, "g", label = "mean_precision")
+plt.plot(t, mrecalls, "b", label = "mean_recall")
+plt.plot(t, mfs, "y", label = "mean_F")
+plt.legend(loc = "upper left")
 
 plt.show()

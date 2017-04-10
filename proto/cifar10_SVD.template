@@ -127,20 +127,10 @@ layer {
 }
 
 layer {
-	name: "ipVT"
+	name: "ipZ"
 	type: "InnerProduct"
 	bottom: "ip1"
-	top: "ipVT"
-	inner_product_param{
-		num_output: $
-	}
-}
-
-layer {
-	name: "ipS"
-	type: "InnerProduct"
-	bottom: "ipVT"
-	top: "ipS"
+	top: "ipZ"
 	inner_product_param{
 		num_output: $
 	}
@@ -149,7 +139,7 @@ layer {
 layer {
 	name: "ipU"
 	type: "InnerProduct"
-	bottom: "ipS"
+	bottom: "ipZ"
 	top: "ipSVD"
 	inner_product_param{
 		num_output: 10

@@ -5,13 +5,15 @@ from caffe.proto import caffe_pb2
 import lmdb
 import numpy as np
 import os
+import sys
 from numpy import linalg as la
 import matplotlib.pyplot as plt 
 from base import *
 
 CAFFE_HOME = "/opt/caffe/"
+RESULT_DIR = "./result/"
 
-SVD_R = 3
+SVD_R = 8
 deploySVD = GetSVDProto(SVD_R)
 
 deploy = "./proto/cifar10_quick.prototxt"
@@ -74,9 +76,13 @@ if SVD_R > 0:
     # SVD
     print ("SVD %d" % SVD_R)
     u, sigma, vt = la.svd(net.params["ip2"][0].data)
-    U = u[:, :SVD_R]
-    S = np.diag(sigma[:SVD_R])
-    VT = vt[:SVD_R, :]
+    print ("Sigma: ", sigma)
+    if SVD_R > len(sigma):
+        print ("SVD_R is too large :-(")
+        sys.exit()
+    U = np.matrix(u[:, :SVD_R])
+    S = np.matrix(np.diag(sigma[:SVD_R]))
+    VT = np.matrix(vt[:SVD_R, :])
     print ("IP2", net.params["ip2"][0].data.shape) # 10, 64
     print ("U", U.shape)
     print ("S", S.shape)
@@ -84,9 +90,11 @@ if SVD_R > 0:
 
     # y = Wx + b
     # y = U * S * VT * x + b
+    # y = U * ((S * VT) * x) + b
+    # y = U * (Z * x) + b
+    Z = S * VT
 
-    np.copyto(netSVD.params["ipVT"][0].data, VT)
-    np.copyto(netSVD.params["ipS"][0].data, S)
+    np.copyto(netSVD.params["ipZ"][0].data, Z)
     np.copyto(netSVD.params["ipU"][0].data, U)
     np.copyto(netSVD.params["ipU"][1].data, net.params["ip2"][1].data)
 
@@ -110,6 +118,6 @@ print ("Accuracy: %f" % (right * 1.0 / n))
 
 
 if SVD_R > 0:
-    np.save("net_SVD%d.npy" % SVD_R, pre)
+    np.save(RESULT_DIR + "net_SVD%d.npy" % SVD_R, pre)
 else:
-    np.save("net_normal.npy", pre)
+    np.save(RESULT_DIR + "net_normal.npy", pre)

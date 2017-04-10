@@ -3,7 +3,7 @@ import sys
 from base import *
 
 if len(sys.argv) == 1:
-    PREDICT_FILENAME = "net_normal.npy"
+    PREDICT_FILENAME = "result/net_normal.npy"
 else:
     PREDICT_FILENAME = sys.argv[1]
 
