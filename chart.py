@@ -18,6 +18,7 @@ mfs = []
 # U(10xr) * Z(rx64) * x(64 x 1)
 # Time: O(r*64 + 10 * r) = O(74r)
 # Space: O(10r + 64r) = O(74r) 
+SOURCE_SIZE = 640
 
 
 t = [i for i in range(3, 11)]
@@ -38,23 +39,23 @@ for r in t:
     mrecalls.append(mean_recall)
     mfs.append(mean_F)
 
-print ("k\taccuracy\tmean_precision\tmean_recall\tmean_F\ttime complexity\tspace complexity")
+print ("k\taccuracy\tmean_precision\tmean_recall\tmean_F\t\ttime\tspace\tcompression_rate")
 for i in range(len(t)-1,-1,-1):
-    print ("%d\t%f\t%f\t%f\t%f\t%d\t%d" % (t[i], accs[i], mpres[i], mrecalls[i],mfs[i], time_complex[i], space_complex[i]))
+    print ("%d\t%f\t%f\t%f\t%f\t%d\t%d\t%.2f%%" % (t[i], accs[i], mpres[i], mrecalls[i],mfs[i], time_complex[i], space_complex[i], space_complex[i] * 100.0 / SOURCE_SIZE))
 
 plt.title("accuracy(totally), time and space complexity")
-plt.plot(t, accs, "g", label = "accuracy")
-plt.plot(t, time_complex_n, "r", label = "time complexity")
-plt.plot(t, space_complex_n, "k", label = "space complexity")
+plt.plot(t, accs, "g", label = "accuracy", linestyle="-")
+plt.plot(t, time_complex_n, "r", label = "time complexity", linestyle="--")
+plt.plot(t, space_complex_n, "k", label = "space complexity", linestyle="-.")
 plt.legend(loc = "upper left")
 plt.show()
 
 plt.title("statistics")
-plt.plot(t, accs, "r", label = "accuracy")
+plt.plot(t, accs, "r", label = "accuracy", linestyle="-")
 #plt.plot(t, maccs, "r", label = "mean_accuracy")
-plt.plot(t, mpres, "g", label = "mean_precision")
-plt.plot(t, mrecalls, "b", label = "mean_recall")
-plt.plot(t, mfs, "y", label = "mean_F")
+plt.plot(t, mpres, "g", label = "mean_precision", linestyle="--")
+plt.plot(t, mrecalls, "b", label = "mean_recall",linestyle="-.")
+plt.plot(t, mfs, "y", label = "mean_F", linestyle=":")
 plt.legend(loc = "upper left")
 
 plt.show()
