@@ -52,9 +52,14 @@ def eval_result(label, pre, num_kinds):
         print ("========")
 
     acc = np.sum(pre == label) * 1.0 / n
+    mean_acc = s_acc / num_kinds
+    mean_precision = s_precision / num_kinds
+    mean_recall = s_recall / num_kinds
+    mean_F = s_F / num_kinds
     print ("Totally:")
     print ("Accuracy: %f" % acc)
-    print ("Mean Accuracy: %f" % (s_acc / num_kinds))
-    print ("Mean Precision: %f" % (s_precision / num_kinds))
-    print ("Mean Recall: %f" % (s_recall / num_kinds))
-    print ("Mean F: %f" % (s_F / num_kinds))
+    print ("Mean Accuracy: %f" % (mean_acc))
+    print ("Mean Precision: %f" % (mean_precision))
+    print ("Mean Recall: %f" % (mean_recall))
+    print ("Mean F: %f" % (mean_F))
+    return acc, mean_acc, mean_precision, mean_recall, mean_F
