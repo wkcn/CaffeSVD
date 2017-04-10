@@ -4,15 +4,17 @@ from caffe import layers as L, params as P, to_proto
 from caffe.proto import caffe_pb2
 import lmdb
 import numpy as np
+import os
 from numpy import linalg as la
 import matplotlib.pyplot as plt 
 from base import *
 
 CAFFE_HOME = "/opt/caffe/"
 
+SVD_R = 3
+deploySVD = GetSVDProto(SVD_R)
+
 deploy = "./proto/cifar10_quick.prototxt"
-SVD_R = 8
-deploySVD = GetSVDProto(SVD_R)#"./proto/cifar10_SVD%d.prototxt" % SVD_R
 caffe_model = CAFFE_HOME + "/examples/cifar10/cifar10_quick_iter_5000.caffemodel.h5" 
 train_db = CAFFE_HOME + "examples/cifar10/cifar10_train_lmdb"
 test_db = CAFFE_HOME + "examples/cifar10/cifar10_test_lmdb"
@@ -41,18 +43,20 @@ def read_db(db_name):
 
 testX, testy = read_db(test_db)
 
+if not os.path.exists("label.npy"):
+    np.save("label.npy", testy)
+
 # Load model and network
 net = caffe.Net(deploy, caffe_model, caffe.TEST) 
-netSVD = caffe.Net(deploySVD, caffe_model, caffe.TEST)
-
 for layer_name, param in net.params.items():
     # 0 is weight, 1 is biase
     print (layer_name, param[0].data.shape)
-
-print ("SVD NET:")
-for layer_name, param in netSVD.params.items():
-    # 0 is weight, 1 is biase
-    print (layer_name, param[0].data.shape)
+if SVD_R > 0:
+    netSVD = caffe.Net(deploySVD, caffe_model, caffe.TEST)
+    print ("SVD NET:")
+    for layer_name, param in netSVD.params.items():
+        # 0 is weight, 1 is biase
+        print (layer_name, param[0].data.shape)
 
 print (type(net.params))
 print (net.params.keys())
@@ -65,32 +69,47 @@ print (net.params["ip2"][1].data.shape)
 
 data, label = L.Data(source = test_db, backend = P.Data.LMDB, batch_size = 100, ntop = 2, mean_file = mean_proto)
 
-# SVD
-print ("SVD")
-u, sigma, vt = la.svd(net.params["ip2"][0].data)
-U = u[:, :SVD_R]
-S = np.diag(sigma[:SVD_R])
-VT = vt[:SVD_R, :]
 
-# y = Wx + b
-# y = U * S * VT * x + b
+if SVD_R > 0:
+    # SVD
+    print ("SVD %d" % SVD_R)
+    u, sigma, vt = la.svd(net.params["ip2"][0].data)
+    U = u[:, :SVD_R]
+    S = np.diag(sigma[:SVD_R])
+    VT = vt[:SVD_R, :]
+    print ("IP2", net.params["ip2"][0].data.shape) # 10, 64
+    print ("U", U.shape)
+    print ("S", S.shape)
+    print ("VT", VT.shape)
 
-np.copyto(netSVD.params["ipVT"][0].data, VT)
-np.copyto(netSVD.params["ipS"][0].data, S)
-np.copyto(netSVD.params["ipU"][0].data, U)
-np.copyto(netSVD.params["ipU"][1].data, net.params["ip2"][1].data)
+    # y = Wx + b
+    # y = U * S * VT * x + b
+
+    np.copyto(netSVD.params["ipVT"][0].data, VT)
+    np.copyto(netSVD.params["ipS"][0].data, S)
+    np.copyto(netSVD.params["ipU"][0].data, U)
+    np.copyto(netSVD.params["ipU"][1].data, net.params["ip2"][1].data)
+
+    nn = netSVD
+else:
+    print ("NORMAL")
+    nn = net
 
 
 n = len(testX)
 pre = np.zeros(testy.shape)
 print ("N = %d" % n)
 for i in range(n):
-    net.blobs["data"].data[...] = testX[i] - mean_pic 
-    net.forward()
-    prob = net.blobs["prob"].data
+    nn.blobs["data"].data[...] = testX[i] - mean_pic 
+    nn.forward()
+    prob = nn.blobs["prob"].data
     pre[i] = prob.argmax() 
     print ("%d / %d" % (i + 1, n))
 right = np.sum(pre == testy) 
 print ("Accuracy: %f" % (right * 1.0 / n))
 
-np.save("net_normal.npy", pre)
+
+if SVD_R > 0:
+    np.save("net_SVD%d.npy" % SVD_R, pre)
+else:
+    np.save("net_normal.npy", pre)
