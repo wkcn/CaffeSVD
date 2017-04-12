@@ -14,7 +14,7 @@ from base import *
 CAFFE_HOME = "/opt/caffe/"
 RESULT_DIR = "./result/"
 
-SVD_R = 62
+SVD_R = 50
 deploySVD = GetIP1SVDProto(SVD_R)
 
 deploy = "./proto/cifar10_quick.prototxt"

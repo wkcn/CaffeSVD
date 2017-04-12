@@ -33,6 +33,7 @@ def read_db(db_name):
 
     X = []
     y = []
+    cnts = {}
     for key, value in lmdb_cursor:
         datum.ParseFromString(value)
         label = datum.label
@@ -40,11 +41,18 @@ def read_db(db_name):
         #data = data.swapaxes(0, 2).swapaxes(0, 1)
         X.append(data)
         y.append(label)
+        if label not in cnts:
+            cnts[label] = 0
+        cnts[label] += 1
         #plt.imshow(data)
         #plt.show()
-    return X, np.array(y)
+    return X, np.array(y), cnts
 
-testX, testy = read_db(test_db)
+testX, testy, cnts = read_db(test_db)
+#testX, testy, cnts = read_db(train_db)
+print ("#train set: ", len(testX))
+print ("the size of sample:", testX[0].shape)
+print ("kinds: ", cnts)
 
 if not os.path.exists("label.npy"):
     np.save("label.npy", testy)
@@ -53,7 +61,8 @@ if not os.path.exists("label.npy"):
 net = caffe.Net(deploy, caffe_model, caffe.TEST) 
 for layer_name, param in net.params.items():
     # 0 is weight, 1 is biase
-    print (layer_name, param[0].data.shape)
+    print (layer_name, param[0].data.shape,net.blobs[layer_name].data.shape)
+
 if SVD_R > 0:
     netSVD = caffe.Net(deploySVD, caffe_model, caffe.TEST)
     print ("SVD NET:")
