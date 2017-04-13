@@ -1,5 +1,6 @@
 from base import *
 import matplotlib.pyplot as plt
+# 显示压缩ip1层的对比结果
 
 label = np.load("label.npy")
 n = len(label)

@@ -12,6 +12,17 @@ def GetSVDProtoI(r, filename, template):
 
     return filename
 
+def BuildFile(rs, filename, template):
+    if True or not os.path.exists(filename):
+        fin = open(template, "r")
+        fout = open(filename, "w")
+        for line in fin.readlines():
+            for fr, to in rs:
+                line = line.replace(fr, to)
+            fout.write(line)
+        fin.close()
+        fout.close()
+
 def GetSVDProto(r):
     filename = "./proto/SVD/cifar10_SVD%d.prototxt" % r
     template = "./proto/cifar10_SVD.template"
