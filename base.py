@@ -81,4 +81,5 @@ def eval_result(label, pre, num_kinds):
     print ("Mean Precision: %f" % (mean_precision))
     print ("Mean Recall: %f" % (mean_recall))
     print ("Mean F: %f" % (mean_F))
+    print ("%f|%f|%f|%f" % (acc, mean_precision, mean_recall, mean_F))
     return acc, mean_acc, mean_precision, mean_recall, mean_F

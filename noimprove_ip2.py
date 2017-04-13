@@ -14,7 +14,7 @@ from base import *
 CAFFE_HOME = "/opt/caffe/"
 RESULT_DIR = "./result/"
 
-SVD_R = 4
+SVD_R = 8
 deploySVD = GetSVDProto(SVD_R)
 USE_WEIGHT = True
 
@@ -126,17 +126,17 @@ cwd = os.getcwd()
 proto = os.getcwd() + "/tmp/cifar10_quick_train_test.prototext"
 BuildFile([("$", "%d" % SVD_R)], proto, "./proto/cifar10_quick_train_test_SVD.template")
 
-ps = [("$prototxt", proto), ("$snap_pre", "examples/cifar10/net_improve_ip2_SVD%d" % (SVD_R))]
-BuildFile(ps, example_dir + "cifar10_quick_solver_imp.prototxt","./proto/cifar10_quick_solver_imp.template")
-rp = [("$proto", example_dir + "cifar10_quick_solver_imp.prototxt"), ("$model", "%s/%s" % (cwd, model_file))]
-BuildFile(rp, example_dir + "train_imp.sh", "./proto/train_quick_imp.sh")
+ps = [("$prototxt", proto), ("$snap_pre", "examples/cifar10/net_noimprove_ip2_SVD%d" % (SVD_R))]
+BuildFile(ps, example_dir + "cifar10_quick_solver_noimp.prototxt","./proto/cifar10_quick_solver_noimp.template")
+rp = [("$proto", example_dir + "cifar10_quick_solver_noimp.prototxt")]
+BuildFile(rp, example_dir + "train_noimp.sh", "./proto/train_quick_noimp.sh")
 
 print ("train..")
-os.system("cd %s && sudo optirun sh ./examples/cifar10/train_imp.sh" % CAFFE_HOME)
+os.system("cd %s && sudo optirun sh ./examples/cifar10/train_noimp.sh" % CAFFE_HOME)
 raw_input("aha")
 
 # 加载新的模型
-new_model = CAFFE_HOME + "examples/cifar10/net_improve_ip2_SVD%d_iter_500.caffemodel.h5" % SVD_R
+new_model = CAFFE_HOME + "examples/cifar10/net_noimprove_ip2_SVD%d_iter_4500.caffemodel.h5" % SVD_R
 nn = caffe.Net(deploySVD, new_model, caffe.TEST)
 
 n = len(testX)
@@ -153,6 +153,6 @@ print ("Accuracy: %f" % (right * 1.0 / n))
 
 
 if SVD_R > 0:
-    np.save(RESULT_DIR + "net_imp_SVD%d.npy" % SVD_R, pre)
+    np.save(RESULT_DIR + "net_noimp_SVD%d.npy" % SVD_R, pre)
 else:
-    np.save(RESULT_DIR + "net_imp_normal.npy", pre)
+    np.save(RESULT_DIR + "net_noimp_normal.npy", pre)
