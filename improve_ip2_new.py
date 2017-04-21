@@ -1,5 +1,5 @@
 #coding=utf-8
-# decompress ip1 layer
+# decompress ip2 layer
 import caffe
 from caffe import layers as L, params as P, to_proto
 from caffe.proto import caffe_pb2
@@ -14,8 +14,9 @@ from base import *
 CAFFE_HOME = "/opt/caffe/"
 RESULT_DIR = "./result/"
 
-SVD_R = 50
-deploySVD = GetIP1SVDProto(SVD_R)
+SVD_R = 4
+deploySVD = GetSVDProto(SVD_R)
+USE_WEIGHT = True
 
 deploy = "./proto/cifar10_quick.prototxt"
 caffe_model = CAFFE_HOME + "/examples/cifar10/cifar10_quick_iter_5000.caffemodel.h5" 
@@ -33,6 +34,7 @@ def read_db(db_name):
 
     X = []
     y = []
+    cnts = {}
     for key, value in lmdb_cursor:
         datum.ParseFromString(value)
         label = datum.label
@@ -40,20 +42,33 @@ def read_db(db_name):
         #data = data.swapaxes(0, 2).swapaxes(0, 1)
         X.append(data)
         y.append(label)
+        if label not in cnts:
+            cnts[label] = 0
+        cnts[label] += 1
         #plt.imshow(data)
         #plt.show()
-    return X, np.array(y)
+    return X, np.array(y), cnts
 
-testX, testy = read_db(test_db)
+testX, testy, cnts = read_db(test_db)
+#testX, testy, cnts = read_db(train_db)
+print ("#train set: ", len(testX))
+print ("the size of sample:", testX[0].shape)
+print ("kinds: ", cnts)
 
 if not os.path.exists("label.npy"):
     np.save("label.npy", testy)
 
 # Load model and network
 net = caffe.Net(deploy, caffe_model, caffe.TEST) 
+print ("=====")
+print (net.blobs["data"].data.shape)
+print (net.blobs["pool1"].data.shape)
+print (net.blobs["pool2"].data.shape)
+print (net.blobs["pool3"].data.shape)
 for layer_name, param in net.params.items():
     # 0 is weight, 1 is biases
-    print (layer_name, param[0].data.shape)
+    print (layer_name, param[0].data.shape,net.blobs[layer_name].data.shape)
+
 if SVD_R > 0:
     netSVD = caffe.Net(deploySVD, caffe_model, caffe.TEST)
     print ("SVD NET:")
@@ -72,11 +87,12 @@ print (net.params["ip2"][1].data.shape)
 
 data, label = L.Data(source = test_db, backend = P.Data.LMDB, batch_size = 100, ntop = 2, mean_file = mean_proto)
 
+model_file = "model/net_SVD%d.caffemodel" % SVD_R
 
 if SVD_R > 0:
     # SVD
     print ("SVD %d" % SVD_R)
-    u, sigma, vt = la.svd(net.params["ip1"][0].data)
+    u, sigma, vt = la.svd(net.params["ip2"][0].data)
     print ("Sigma: ", sigma)
     if SVD_R > len(sigma):
         print ("SVD_R is too large :-(")
@@ -84,7 +100,7 @@ if SVD_R > 0:
     U = np.matrix(u[:, :SVD_R])
     S = np.matrix(np.diag(sigma[:SVD_R]))
     VT = np.matrix(vt[:SVD_R, :])
-    print ("IP2", net.params["ip1"][0].data.shape) # 10, 64
+    print ("IP2", net.params["ip2"][0].data.shape) # 10, 64
     print ("U", U.shape)
     print ("S", S.shape)
     print ("VT", VT.shape)
@@ -97,13 +113,41 @@ if SVD_R > 0:
 
     np.copyto(netSVD.params["ipZ"][0].data, Z)
     np.copyto(netSVD.params["ipU"][0].data, U)
-    np.copyto(netSVD.params["ipU"][1].data, net.params["ip1"][1].data)
+    np.copyto(netSVD.params["ipU"][1].data, net.params["ip2"][1].data)
 
     nn = netSVD
+    nn.save(model_file)
+
 else:
     print ("NORMAL")
     nn = net
 
+# 生成配置文件
+# CAFFE_HOME
+print ("CONFIG")
+example_dir = CAFFE_HOME + "examples/cifar10/"
+build_dir = "./build/"
+cwd = os.getcwd()
+
+proto = build_dir + "train_test_SVD.prototext"
+BuildFile([("$", "%d" % SVD_R)], proto, "./proto/train_test_SVD.template")
+
+ps = [("$prototxt", proto), ("$snap_pre", "ip2_SVD%d" % (SVD_R))]
+BuildFile(ps, build_dir + "solver.prototxt","./proto/solver.template")
+model_file = build_dir + "ip2_SVD%d.caffemodel" % (SVD_R) 
+rp = [("$proto", build_dir + "solver.prototxt"), ("$model", model_file)]
+BuildFile(rp, build_dir + "train_imp.sh", "./proto/train_imp.sh")
+nn.save(model_file)
+
+print ("OK")
+sys.exit(0)
+print ("train..")
+os.system("cd %s && sudo optirun sh ./examples/cifar10/train_imp.sh" % CAFFE_HOME)
+raw_input("aha")
+
+# 加载新的模型
+new_model = CAFFE_HOME + "examples/cifar10/net_improve_ip2_SVD%d_iter_500.caffemodel.h5" % SVD_R
+nn = caffe.Net(deploySVD, new_model, caffe.TEST)
 
 n = len(testX)
 pre = np.zeros(testy.shape)
@@ -119,6 +163,6 @@ print ("Accuracy: %f" % (right * 1.0 / n))
 
 
 if SVD_R > 0:
-    np.save(RESULT_DIR + "net_ip1_SVD%d.npy" % SVD_R, pre)
+    np.save(RESULT_DIR + "net_imp_SVD%d.npy" % SVD_R, pre)
 else:
-    np.save(RESULT_DIR + "net_ip1_normal.npy", pre)
+    np.save(RESULT_DIR + "net_imp_normal.npy", pre)

@@ -1,1 +1,1 @@
-sudo optirun python2 improve_ip2.py 
+sudo optirun python2 test_ip1_new.py 

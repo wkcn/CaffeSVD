@@ -60,14 +60,14 @@ if not os.path.exists("label.npy"):
 # Load model and network
 net = caffe.Net(deploy, caffe_model, caffe.TEST) 
 for layer_name, param in net.params.items():
-    # 0 is weight, 1 is biase
+    # 0 is weight, 1 is biases
     print (layer_name, param[0].data.shape,net.blobs[layer_name].data.shape)
 
 if SVD_R > 0:
     netSVD = caffe.Net(deploySVD, caffe_model, caffe.TEST)
     print ("SVD NET:")
     for layer_name, param in netSVD.params.items():
-        # 0 is weight, 1 is biase
+        # 0 is weight, 1 is biases
         print (layer_name, param[0].data.shape)
 
 print (type(net.params))
