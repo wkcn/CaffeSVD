@@ -1,7 +1,10 @@
 # 实现一个压缩的深度神经网络
 
+** 注：请在typora或其它支持Markdown公式语法的阅读器下阅读本文档.
+
 ## 动机
-	深度神经网络中, 全连接网络层的参数占据的存储空间比较大, 在深度卷积神经网络中, 全连接层的参数占据了参数存储空间的90%以上.[1] 深度学习算法是计算密集型和存储密集型的[2], 使得它难以部署在拥有有限硬件资源的嵌入式系统上. 为了降低参数所占用的存储空间, 提高预测效率, 使用奇异值分解的方法(SVD)对全连接层的参数矩阵进行压缩, 并研究模型预测准确度与压缩率的关系.
+
+深度神经网络中, 全连接网络层的参数占据的存储空间比较大, 在深度卷积神经网络中, 全连接层的参数占据了参数存储空间的90%以上.[1] 深度学习算法是计算密集型和存储密集型的[2], 使得它难以部署在拥有有限硬件资源的嵌入式系统上. 为了降低参数所占用的存储空间, 提高预测效率, 使用奇异值分解的方法(SVD)对全连接层的参数矩阵进行压缩, 并研究模型预测准确度与压缩率的关系.
 
 ## 实验环境
 	操作系统: Arch Linux 4.10.8
@@ -14,6 +17,38 @@
 	环境配置:
 	CPU: Intel(r) Core(tm) i7-4702MQ CPU @ 2.20GHZ
 	GPU: NVIDIA Corporation GK107M [GeForce GT 750M]
+
+## 文件说明
+
+|文件名|说明|
+|------|----|
+|test.py|压缩IP2全连接层, 可以通过修改SVD_R变量改变压缩参数|
+|test2.py|压缩IP1全连接层, 可以通过修改SVD_R变量改变压缩参数|
+|improve_model_ip1.py|使用SVD, 聚类，Reduced-Precision方法压缩|
+|improve_ip1_new.py|压缩IP1全连接层后进行fine-tune|
+|improve_ip2.py|压缩IP2全连接层后以原参数为初值，进行fine-tune|
+|improve_ip2_new.py|压缩IP2全连接层后保存caffemodel(不进行fine-tune)|
+|noimprove_ip2.py|随机初始化权重，重新训练被压缩ip2层后的网络|
+|eval_model_ip1.py|评估压缩ip1层后的性能, 在result文件夹生成对应的*.npy文件|
+|eval_model_ip2.py|评估压缩ip2层后的性能, 在result文件夹生成对应的*.npy文件|
+|evaluate.py|读取result文件夹下的*.npy文件并进行评估|
+|base.py|基本操作，比如proto模板生成, 模型评分|
+|build.sh|训练脚本|
+|chart.py|显示压缩ip2层的对比结果|
+|chart2.py|显示压缩ip1层的对比结果|
+|chart_imp.py|绘制改进的压缩方法(retrain)的结果图|
+|convert_mean.py|将mean.binaryproto转换为mean.npy|
+|mcluster.py|使用K-means对全连接层进行压缩|
+|analyze_ipZ.py|分析ipZ层|
+|mean.npy|图像均值文件|
+|label.npy|图像测试集的标签文件|
+
+|文件夹|说明|
+|------|----|
+|build/|SVD压缩ip2后训练网络的文件|
+|build_ip1/|SVD压缩ip1后训练网络的文件|
+|proto/|proto和proto模板, 自动化脚本模板|
+|slides/|演示文件，介绍了项目的压缩方法|
 
 ## 深度神经网络
 - 数据集
