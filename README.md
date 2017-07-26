@@ -69,7 +69,7 @@
 - 网络模型
 
    * 训练网络时的神经网络定义
-	```
+	 ```
      cifar10_quick_train_test.prototxt
      conv1: data  -> conv1
      pool1: conv1 -> pool1
@@ -84,7 +84,7 @@
      ip2  : ip1   -> ip2
      accuracy[TEST]: ip2, label -> accuracy
      loss(softmax with loss): ip2, label -> loss
-	```
+	 ```
 
    * 训练结束后保存的神经网络的定义 
 	 ```
